@@ -3,22 +3,24 @@ import colorama
 from time import sleep
 from sys import exit
 from colorama import Fore as F
+from datetime import datetime
 
-br = open('balance.txt' , "r")
 newpart = "\n\n\n\n\n\n\n"
 
 colorama.init(autoreset=True)
 
+history_files = ['0' , '1' , '2' , '3' , '4']
+
 class AccountManager:
 	def show_accounts(self) -> str:
-		with open('accounts.txt',"r") as f:
-			al = f.read()
-			al = al.split("\n")
-			output = []
-			for i in range(len(al) - 1):
-				output.append(str(i + 1) + '.' + al[i] + '\n')
-			return "".join(output)
-
+		f = open('accounts.txt',"r")
+		al = f.read()
+		al = al.split("\n")
+		output = []
+		for i in range(len(al) - 1):
+			output.append(str(i + 1) + '.' + al[i] + '\n')
+		return "".join(output)
+		f.close()
 	def	add_account(self,new_account_name,new_account_password):
 		with open('accounts.txt','a') as f:
 			f.write(new_account_name + '\n')
@@ -46,8 +48,10 @@ class AccountManager:
 class BANK:
 	def __init__(self,aid):
 		self.aid = aid - 1
+		self.uaid = aid
 	def balance(self):
-		b = br.read()
+		with open('balance.txt' , 'r') as f:
+			b = f.read()
 		b = b.split("\n")
 		return b[self.aid]
 	def change_pass(self,new_pass):
@@ -57,20 +61,70 @@ class BANK:
 		with open("password.txt" , "w") as f:
 			__pass[self.aid] = new_pass
 			f.write('\n'.join(__pass))
-	def deposit(self,balance,to):
-		__b2 = br.read()
-		__b2 = __b2.split("\n")
+	def deposit(self,balance,to,oi):
 		__b = []
-		for v in __b2[:-1]:
-			__b.append(int(v))
-		__b[to] += balance
-		__b[self.aid] -= balance
-		for v in __b:
-			__b2.append(str(v))
-		with open("balance.txt" , "w") as f:
-			f.write(__b2)
-		
-	
+		ff = ''
+		with open('balance.txt' , 'r') as f:
+			__b = f.read()
+		__b = __b.split("\n")
+		try:
+			__b.remove('')
+		except:
+			pass
+		ot = False
+		nt = 0
+		if to < self.uaid:
+			nt = to
+		else:
+			nt = to + 1
+			if nt == oi:
+				ot = True
+		try:
+			t , f = int(__b[nt]) , int(__b[self.aid])
+		except :
+			f = int(__b[self.aid])
+			f -= balance
+			ff = str(f)
+		else:
+			t += balance 
+			f -= balance
+			ff , ft = str(f), str(t)
+			__b[nt] = ft
+		finally:
+			__b[self.aid] = ff
+			with open("balance.txt" , "w") as f:
+				f.write('\n'.join(__b))
+	def write_history(self , b , to , oi):
+		now = datetime.now()
+		dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
+		x = []
+		with open("accounts.txt" , "r") as f:
+			x = f.read()
+			x = x.split('\n')
+		st = 0
+		oi = False
+		to -= 1
+		if to < self.aid:
+			st = to
+		elif to == oi:
+			oi = True
+		else:
+			st = to + 1
+		FINAL_OUTPUT1 = dt_string + ' Withdraw ' + b + '$ Destination:' + x[st] + "\n"
+		FINAL_OUTPUT2 = dt_string + ' Deposit ' + b + '$ From:' + x[self.aid] + "\n‍‍‍‍‍‍‍‍‍‍‍‍‍"
+		with open(F"History/{self.aid}.txt" , "a") as f:
+			f.write(FINAL_OUTPUT1)
+		if not oi:
+			f = open("History/{0}.txt".format(x.index(x[st])) , "a")
+			f.write(FINAL_OUTPUT2)
+			f.close()
+		else:
+			pass
+	def show_history(self) -> str:
+		with open(F"History/{self.aid}.txt" , 'r') as f:
+			h = f.read()
+			h = h.split('\n')
+			return '\n'.join(h)
 o = AccountManager()
 print("Welcome to OOP Bank.")
 sleep(1)
@@ -120,7 +174,7 @@ except ValueError:
 	exit()
 finally:
 	print(newpart)
-#################################################################
+#############################################################################################################
 bc = BANK(aid)
 print("You have successfully logged in.")
 while True:
@@ -154,12 +208,15 @@ Your choice:""")
 			A.append(a2[j])
 		A.append("Others")
 		ou = []
+		oix = A.index("Others")
 		for k in range(len(A)):
 			ou.append(str(k + 1) + '.' + A[k] + '\n')
 		ou = ''.join(ou)
 		i = input("Please enter your destination account number.\n" + ou + "\nYour choice:")
 		try:
 			i = int(i)
+			if i < 1 :
+				raise ValueError
 		except:
 			print(F.RED + "Please enter Valid input.")
 			continue
@@ -167,7 +224,7 @@ Your choice:""")
 			print(F.RED + "Please enter the number in the correct range.")
 			continue
 		balance_for_disposit = input("Please enter your desired amount:")
-		try:
+		try:			
 			balance_for_disposit = int(balance_for_disposit)
 		except:
 			print(F.RED + "Please enter Valid input.")
@@ -175,9 +232,19 @@ Your choice:""")
 		if int(bc.balance()) < balance_for_disposit:
 			print(F.RED + "Insufficient account balance")
 			continue
-		bc.deposit(balance_for_disposit,i-1)
+		print("Please Wait")
+		sleep(1)
+		bc.deposit(balance_for_disposit,i-1,oix+1)
+		print(F.GREEN + "The operation was completed successfully.")
+		sleep(0.745)
+		bc.write_history(to=i,oi=oix+1,b=str(balance_for_disposit))
+		print(newpart)
 	if t == 3:
-		pass
+		print("Please Wait")
+		sleep(1.101)
+		print("Your History:\n" + bc.show_history())
+		print
+		print(newpart)
 	if t == 4:
 		op = input("Enter your old password:")
 		if o.check_password(aid,op):
@@ -194,11 +261,13 @@ Your choice:""")
 			else:
 				print(F.RED + "Please enter the correct password.\n\rThe operation failed.")
 		else:
-			print(F.RED + "Please enter the correct password.\n")
-	if t == 5 or t == "\n":
+			print(F.RED + "Please enter the correct password.\nIf this is your first time logging into your account, log out and log in again.")
+	if t == 5 or t == "":
+		print("You have successfully logged out.")
+		sleep(2)
+		print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 		break
 print("Goodbye")
 exit()
-br.close()
 
 #########END##########
