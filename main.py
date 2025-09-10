@@ -1,15 +1,13 @@
 ########START#########
-import colorama
 from time import sleep
 from sys import exit
 from colorama import Fore as F
+from colorama import init
 from datetime import datetime
 
 newpart = "\n\n\n\n\n\n\n"
 
-colorama.init(autoreset=True)
-
-history_files = ['0' , '1' , '2' , '3' , '4']
+init(autoreset=True)
 
 class AccountManager:
 	def show_accounts(self) -> str:
@@ -22,12 +20,22 @@ class AccountManager:
 		return "".join(output)
 		f.close()
 	def	add_account(self,new_account_name,new_account_password):
+		ac = 0
 		with open('accounts.txt','a') as f:
 			f.write(new_account_name + '\n')
 		with open('password.txt' , 'a') as f:
 			f.write(new_account_password + "\n")
 		with open('balance.txt', 'a+') as fa:
-			fa.write('200')
+			fa.write('200\n')
+		with open('accounts.txt') as f:
+			f = f.read()
+			f = f[:-2].split('\n')
+			print(f , len(f))
+			ac = len(f)-1
+		with open(F'History/{str(ac)}.txt' , "w") as f:
+			now = datetime.now()
+			dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
+			f.write(F"{dt_string}: User Created")
 	def check_password(self,un,pass_to_check) -> bool:
 		with open('password.txt' , "r") as f:
 			__p = f.read()
@@ -94,7 +102,8 @@ class BANK:
 			__b[self.aid] = ff
 			with open("balance.txt" , "w") as f:
 				f.write('\n'.join(__b))
-	def write_history(self , b , to , oi):
+	def write_history(self , b , to):
+		to -= 1
 		now = datetime.now()
 		dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
 		x = []
@@ -102,19 +111,17 @@ class BANK:
 			x = f.read()
 			x = x.split('\n')
 		st = 0
-		oi = False
 		to -= 1
 		if to < self.aid:
 			st = to
-		elif to == oi:
-			oi = True
 		else:
 			st = to + 1
+		x.append("Others")
 		FINAL_OUTPUT1 = dt_string + ' Withdraw ' + b + '$ Destination:' + x[st] + "\n"
 		FINAL_OUTPUT2 = dt_string + ' Deposit ' + b + '$ From:' + x[self.aid] + "\n‍‍‍‍‍‍‍‍‍‍‍‍‍"
 		with open(F"History/{self.aid}.txt" , "a") as f:
 			f.write(FINAL_OUTPUT1)
-		if not oi:
+		if not st == x.index("Others"):
 			f = open("History/{0}.txt".format(x.index(x[st])) , "a")
 			f.write(FINAL_OUTPUT2)
 			f.close()
@@ -163,6 +170,8 @@ except TypeError:
 		if p == cp: 					#Create User
 			o.add_account(n,p)
 			print(F.GREEN + "User created successfully")
+			print("Please log in again to use your account.")
+			exit()
 		elif p != cp :
 			print(F.RED + "Please enter the correct password.\n\rThe operation failed.")
 			exit()
@@ -172,8 +181,7 @@ except TypeError:
 except ValueError:
 	print(F.RED + "Please enter the number in the correct range.")
 	exit()
-finally:
-	print(newpart)
+print(2 * newpart)
 #############################################################################################################
 bc = BANK(aid)
 print("You have successfully logged in.")
@@ -237,7 +245,7 @@ Your choice:""")
 		bc.deposit(balance_for_disposit,i-1,oix+1)
 		print(F.GREEN + "The operation was completed successfully.")
 		sleep(0.745)
-		bc.write_history(to=i,oi=oix+1,b=str(balance_for_disposit))
+		bc.write_history(to=i,b=str(balance_for_disposit))
 		print(newpart)
 	if t == 3:
 		print("Please Wait")
@@ -261,7 +269,7 @@ Your choice:""")
 			else:
 				print(F.RED + "Please enter the correct password.\n\rThe operation failed.")
 		else:
-			print(F.RED + "Please enter the correct password.\nIf this is your first time logging into your account, log out and log in again.")
+			print(F.RED + "Please enter the correct password.")
 	if t == 5 or t == "":
 		print("You have successfully logged out.")
 		sleep(2)
